@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657874, g: 0.49641252, b: 0.574817, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -1124,13 +1124,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   go_Player: {fileID: 1765581634}
-  v_RayPositionOne: {x: 0, y: 2, z: 0}
-  v_RayPositionTwo: {x: 0, y: 0, z: 0}
-  v_RayPositionThree: {x: 0, y: -0.4, z: 0}
+  cr_Top:
+    _position: {x: 0, y: 2, z: 0}
+    _valid: 0
+  cr_Middle:
+    _position: {x: 0, y: 0.4, z: 0}
+    _valid: 0
+  cr_Bottom:
+    _position: {x: 0, y: 0, z: 0}
+    _valid: 0
   f_CamDistance: 10
   f_CamZoomSpeed: 0.6
   f_PosLerpSpeed: 0.75
   f_RotLerpSpeed: 0.75
+  f_maxYAdjust: 8
+  f_YAdjustSpeed: 0.5
+  lm_Ignore:
+    serializedVersion: 2
+    m_Bits: 4294967039
 --- !u!20 &914278834
 Camera:
   m_ObjectHideFlags: 0
@@ -1445,7 +1456,7 @@ GameObject:
   - component: {fileID: 1284599284}
   - component: {fileID: 1284599286}
   - component: {fileID: 1284599285}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Capsule
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1929,7 +1940,7 @@ GameObject:
   - component: {fileID: 1765581636}
   - component: {fileID: 1765581635}
   - component: {fileID: 1765581639}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2001,7 +2012,7 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1765581634}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -27.13, y: 3.92, z: -49.8}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 1284599284}
@@ -2019,9 +2030,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a58f71bb374117146bf450c53b6f1d95, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  f_moveSpeed: 20
-  f_jumpPower: 1
-  f_turnSpeed: 400
+  f_moveSpeed: 24
+  f_jumpPower: 16
+  f_gravity: 18
+  f_turnSpeed: 6
+  f_maxAngle: 25
 --- !u!1 &1992880642
 GameObject:
   m_ObjectHideFlags: 0

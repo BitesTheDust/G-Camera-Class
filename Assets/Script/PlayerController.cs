@@ -5,67 +5,59 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     private CharacterController cc_PlayerControl;
-
-    private int i_jumps = 1;
-
     private float f_jumpVelocity;
-
     private Vector3 v_velocity;
+    private Vector3 v_direction;
 
     [SerializeField] private float f_moveSpeed;
     [SerializeField] private float f_jumpPower;
+    [SerializeField] private float f_gravity;
     [SerializeField] private float f_turnSpeed;
+    [SerializeField] private float f_maxAngle;
 
 
     private void Start ()
     {
         cc_PlayerControl = GetComponent<CharacterController>();
+        v_velocity = Vector3.zero;
 	}
 	
 	private void Update ()
     {
-        v_velocity = Vector3.zero;
+        v_velocity = new Vector3( Input.GetAxis("Horizontal") * f_moveSpeed, v_velocity.y, Input.GetAxis("Vertical") * f_moveSpeed );
 
-        v_velocity.x = (Input.GetAxis("Horizontal") * f_moveSpeed * Time.deltaTime);
-        v_velocity.z = (Input.GetAxis("Vertical") * f_moveSpeed * Time.deltaTime);
-        v_velocity.y = 0;
+        v_direction = new Vector3( v_velocity.x, 0, v_velocity.z );
 
-        cc_PlayerControl.Move(v_velocity);
-
-        Vector3 direction = Vector3.Normalize(v_velocity - transform.position);
-
-        if(v_velocity != Vector3.zero)
-            transform.localRotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(v_velocity, Vector3.up), f_turnSpeed * Time.deltaTime);
-
-        RaycastHit hit;
-        Ray downwards = new Ray(transform.position, Vector3.down);
-
-        if (Physics.Raycast(downwards, out hit))
+        if(v_direction != Vector3.zero) 
         {
-            if (hit.distance < 2)
+            Quaternion destinyRotation =  Quaternion.LookRotation(v_direction, Vector3.up);
+            float angle = Quaternion.Angle( transform.rotation, destinyRotation );
+            if( angle > f_maxAngle ) 
             {
-                if(i_jumps < 1)
-                    i_jumps = 1;
+                v_velocity = new Vector3( 0, v_velocity.y, 0 );
+            }
 
-                f_jumpVelocity = 0;
-            }
-            else
-            {
-                f_jumpVelocity -= (f_jumpPower * 2) * Time.deltaTime;
-            }
+            transform.localRotation = Quaternion.Slerp(transform.rotation, destinyRotation, f_turnSpeed * Time.deltaTime);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && i_jumps > 0)
+        if (cc_PlayerControl.isGrounded)
         {
-            i_jumps--;
-            f_jumpVelocity = f_jumpPower;
+            if ( Input.GetKeyDown( KeyCode.Space ) ) 
+            {
+                v_velocity.y = 0;
+                v_velocity.y = f_jumpPower;
+            }
+        }
+        else 
+        {
+            v_velocity.y -= ( f_jumpPower * 0.95f ) * Time.deltaTime;
         }
 
-        cc_PlayerControl.Move(new Vector3(0, f_jumpVelocity, 0));
+        v_velocity.y -= f_gravity * Time.deltaTime;
     }
 
-    private void Jump()
+    private void FixedUpdate() 
     {
-        
+        cc_PlayerControl.Move( v_velocity * Time.fixedDeltaTime );
     }
 }

@@ -5,18 +5,23 @@ using UnityEngine;
 public class FollowCamera : MonoBehaviour
 {
     [SerializeField] GameObject go_Player;
+    [SerializeField] CameraRay cr_Top,
+            cr_Middle,
+            cr_Bottom;
 
-    [SerializeField] Vector3 v_RayPositionOne,
-            v_RayPositionTwo, 
-            v_RayPositionThree;
-
-    private List<Vector3> _rayPositions;
+    private List<CameraRay> _rays;
 
     [SerializeField] float f_CamDistance;
     [SerializeField] float f_CamZoomSpeed;
     [SerializeField] float f_PosLerpSpeed;
     [SerializeField] float f_RotLerpSpeed;
 
+    [SerializeField] float f_maxYAdjust;
+    [SerializeField] float f_YAdjustSpeed;
+
+    [SerializeField] LayerMask lm_Ignore;
+
+    private float f_currentYAdjust = 0.0f;
     private float f_CurrentCamDistance;
     private Ray r_Ray;
     private RaycastHit _hit;
@@ -28,31 +33,32 @@ public class FollowCamera : MonoBehaviour
 
     private void Start()
     {
-        _rayPositions = new List<Vector3>();
-        _rayPositions.Add(v_RayPositionOne);
-        _rayPositions.Add(v_RayPositionTwo);
-        _rayPositions.Add(v_RayPositionThree);
+        _rays = new List<CameraRay>();
+        _rays.Add(cr_Top);
+        _rays.Add(cr_Middle);
+        _rays.Add(cr_Bottom);
     }
 
 	private void Update()
     {
-        bool validCamPos = CastRays( f_CurrentCamDistance );
+        bool validZoom = RayToCamera( f_CurrentCamDistance );
 
-        float suggestedDistance = ZoomAdjust(validCamPos);
+        float suggestedDistance = ZoomAdjust( validZoom );
 
-        if( !validCamPos ) 
+        if( !validZoom ) 
         {
             f_CurrentCamDistance = suggestedDistance;
         }
         else 
         {
-            validCamPos = CastRays( suggestedDistance );
+            validZoom = RayToCamera( suggestedDistance );
 
-            if( validCamPos )
+            if( validZoom )
                 f_CurrentCamDistance = suggestedDistance;
         }
 
-        transform.position = Vector3.Slerp(transform.position, GetIdealPos(), f_PosLerpSpeed);
+        bool validPosition = CastRays( 3.5f );
+        transform.position = Vector3.Slerp(transform.position, GetIdealPos( validPosition ), f_PosLerpSpeed);
 
         Vector3 direction = Vector3.Normalize(go_Player.transform.position - transform.position);
         transform.localRotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction, Vector3.up), f_RotLerpSpeed);
@@ -63,16 +69,30 @@ public class FollowCamera : MonoBehaviour
         return go_Player.transform.position + rayPos;
     }
 
-    private Vector3 GetIdealPos()
+    private Vector3 GetIdealPos( bool valid )
     {
-        return go_Player.transform.position + (PlayerBehind * f_CurrentCamDistance);
+        Vector3 newPosition = go_Player.transform.position + (PlayerBehind * f_CurrentCamDistance); 
+
+        if( cr_Top._valid && !cr_Middle._valid && f_currentYAdjust < f_maxYAdjust ) 
+        {
+            f_currentYAdjust += f_YAdjustSpeed;
+        }
+        else if( f_currentYAdjust > 0.0f ) 
+        {
+            f_currentYAdjust -= f_YAdjustSpeed;
+        }
+
+        f_currentYAdjust = Mathf.Clamp( f_currentYAdjust, 0, f_maxYAdjust );
+        newPosition.y += f_currentYAdjust;
+
+        return newPosition;
     }
 
     private float ZoomAdjust(bool valid)
     {
         float newValue = f_CurrentCamDistance;
 
-        if (!valid)
+        if(!valid)
         {
             newValue -= f_CamZoomSpeed;
         }
@@ -86,23 +106,43 @@ public class FollowCamera : MonoBehaviour
 
     private bool CastRays( float distance ) 
     {
-        bool validPos = true;
+        int count = 0;
 
-        foreach(Vector3 rayPos in _rayPositions)
+        foreach( CameraRay cr in _rays) 
         {
-            r_Ray = new Ray(GetRayPos(rayPos), PlayerBehind);
-
+            r_Ray = new Ray(GetRayPos(cr._position), PlayerBehind);
             if (Physics.Raycast(r_Ray, out _hit, distance ))
             {
                 Debug.DrawLine(r_Ray.origin, _hit.point, Color.black);
-                validPos = false;
+                cr._valid = false;
+                count++;
             }
             else
             {
                 Debug.DrawLine(r_Ray.origin, r_Ray.origin + (PlayerBehind * f_CamDistance), Color.green);
+                cr._valid = true;
             }
         }
 
-        return validPos;
+        if( count == 3 )
+            return false;
+        else
+            return true;
+    }
+
+    private bool RayToCamera( float distance ) 
+    {
+        Vector3 cameraDirection = ( Camera.main.transform.position - go_Player.transform.position ).normalized;
+        r_Ray = new Ray( go_Player.transform.position, cameraDirection );
+        if( Physics.Raycast(r_Ray, out _hit, distance, lm_Ignore) ) 
+        {
+            Debug.DrawLine(r_Ray.origin, _hit.point, Color.red);
+            return false;
+        }
+        else 
+        {
+            Debug.DrawLine(r_Ray.origin, Camera.main.transform.position , Color.green);
+            return true;
+        }
     }
 }
